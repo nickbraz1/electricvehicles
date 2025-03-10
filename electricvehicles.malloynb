@@ -1,0 +1,270 @@
+>>>malloy
+source: electricvehicles1 is duckdb.table('./electricvehicles.csv') extend {
+    measure:
+    avg_electricrange is avg(`Electric Range`)
+    total_registrations is count(`DOL Vehicle ID`)
+    avg_salesprice is avg(`Sale Price`)
+    avg_msrp is avg(`Base MSRP`)
+    difference is (avg_msrp - avg_salesprice)
+    avg_odometer is avg(`Odometer Reading`)
+    longest_range is max(`Electric Range`)
+    
+
+}
+>>>markdown
+What models have the best range on average? 
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: Make, Model
+  aggregate: avg_electricrange
+}
+>>>malloy
+# line_chart
+run: electricvehicles1 -> {
+  group_by: `Year`
+  aggregate: total_registrations
+  order_by: `Year` asc 
+}
+>>>markdown
+Which cities have the most electric vehicles?
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: City
+  aggregate: total_registrations
+}
+>>>markdown
+What are the most popular Fuel Types among registrations?
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: `Clean Alternative Fuel Vehicle Type`
+  aggregate: total_registrations
+}
+>>>markdown
+For this query, I was super interested in what Hydrogen powered vehicles were. Prior to the previous query, I had never heard of a Hydrogen Powered vehicle. I wanted to know who made them and wat they sold for. 
+>>>malloy
+run: electricvehicles1 -> {
+  where: `Clean Alternative Fuel Vehicle Type` ~ '%Hydrogen%'
+  group_by: 
+    Make
+    Model
+    `Clean Alternative Fuel Vehicle Type`
+    `Year`
+  # currency
+  group_by: `Sale Price`
+  aggregate: total_registrations
+  having: `Sale Price` > 0
+}
+>>>markdown
+What are the most popular electric vehicle models in Washington state?
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: Make, Model
+  aggregate: total_registrations
+}
+>>>markdown
+What the are most popular transaction types among registrations?
+>>>malloy
+# bar_chart
+run: electricvehicles1 -> {
+  group_by: `Transaction Type`
+  aggregate: total_registrations
+  order_by: `Transaction Type` desc
+}
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: `Transaction Type`
+  aggregate: total_registrations
+  order_by: total_registrations desc
+}
+>>>markdown
+What are the most expensive electric vehicle models?
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: 
+    Make
+    Model
+  # currency
+  aggregate: avg_salesprice
+}
+>>>markdown
+What is the average sales price among used electric vehicles?
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: 
+    Make
+    `New or Used Vehicle`
+  # currency
+  aggregate: avg_salesprice
+  where: `New or Used Vehicle` = 'Used'
+}
+>>>markdown
+Electric Vehicle breakdown by odometer, range and sales price. 
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: 
+    Make
+    `New or Used Vehicle`
+  aggregate: avg_odometer, avg_electricrange
+  # currency
+  aggregate: avg_salesprice
+  where: `New or Used Vehicle` = 'Used'
+  having: avg_odometer > 0
+}
+>>>markdown
+Are new or used vehicles more popular in terms of sheer registrations?
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: `New or Used Vehicle`
+  aggregate: total_registrations
+}
+>>>markdown
+Which models has the largest difference between sales price and msrp?
+>>>malloy
+run: electricvehicles1 -> {
+  where: `New or Used Vehicle` = 'Used'
+  group_by: 
+    Make
+    Model
+    `New or Used Vehicle`
+  # currency
+  aggregate: 
+    avg_salesprice
+    avg_msrp
+    difference
+  having: difference > 0
+  order_by: difference desc
+}
+>>>markdown
+Which brands have seen the most growth among electrice vehicles in Spokane?
+>>>malloy
+# bar_chart
+run: electricvehicles1 -> {
+  where:
+    City = 'SPOKANE'
+  group_by: 
+    Make
+    `Year`
+  aggregate: total_registrations
+  group_by:
+  City
+  order_by: `Year` asc
+}
+>>>markdown
+What are the most popular electric vehicle manufacturers in Spokane?
+>>>malloy
+
+run: electricvehicles1 -> {
+  where:
+    City = 'SPOKANE'
+  group_by: 
+    Make
+  aggregate: total_registrations
+  group_by:
+  City
+}
+>>>markdown
+How have Tesla registrations changed in Spokane? 
+>>>malloy
+# line_chart
+run: electricvehicles1 -> {
+  where:
+    Make = 'TESLA',
+    City = 'SPOKANE'
+  group_by: 
+    `Year`
+  aggregate: total_registrations
+  order_by: `Year` asc
+}
+>>>markdown
+How have electric vehcile registrations changed in Spokane?
+>>>malloy
+# bar_chart
+run: electricvehicles1 -> {
+  where:
+    City = 'SPOKANE'
+  group_by: 
+    `Year`
+  aggregate: total_registrations
+  group_by:
+  City
+  order_by: `Year` asc
+}
+>>>markdown
+What are the most popular electric vehicle models in Spokane?
+>>>malloy
+run: electricvehicles1 -> {
+  where: City = 'SPOKANE'
+  group_by: 
+    Make
+    Model
+    City
+  aggregate: total_registrations
+  limit: 10
+}
+>>>markdown
+Living in a rural town in New Hampshire, my parents were interested in purchasing an EV. One of the biggest questions they had was whether or not they would be able to drive to my grandmothers house in Boston and back without having to stop at a charger. Given it is 122 to Boston, it is likely they would not need to stop on the way back. 
+>>>malloy
+run: electricvehicles1 -> {
+  where: Model = 'Model Y'
+  group_by: 
+    Make
+    Model
+  aggregate: longest_range
+}
+>>>markdown
+Tesla Registrations in Newcastle Washington over the years. 
+>>>malloy
+
+run: electricvehicles1 -> {
+  where:
+    City = 'NEWCASTLE',
+    Make = 'TESLA'
+  group_by: 
+    Make
+    `Year`
+  aggregate: total_registrations
+  group_by:
+  City
+}
+>>>malloy
+# bar_chart
+run: electricvehicles1 -> {
+  where:
+    City = 'NEWCASTLE',
+    Make = 'TESLA'
+  group_by: 
+    Make
+    `Year`
+  aggregate: total_registrations
+  group_by:
+  City
+  order_by: `Year` asc
+}
+>>>markdown
+One of my old roomates lives in Newcastle, Washington. Coming from the East Coast, the number of Tesla's on the road was unusual to me. With this query I wanted to look at how many Tesla's had been registered in Newcastle. 
+>>>malloy
+run: electricvehicles1 -> {
+  where:
+    City = 'NEWCASTLE',
+    Make = 'TESLA'
+  group_by: 
+    Make
+  aggregate: total_registrations
+  group_by:
+  City
+}
+>>>markdown
+What models have the longest ranges?
+>>>malloy
+run: electricvehicles1 -> {
+  group_by: Make, Model
+  aggregate: longest_range
+  limit: 5
+}
+>>>malloy
+run: electricvehicles1 -> {
+  where: Make != 'TESLA'
+  group_by: Make, Model
+  aggregate: longest_range
+  limit: 5
+}
